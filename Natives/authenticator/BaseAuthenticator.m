@@ -22,6 +22,7 @@ static BaseAuthenticator *current = nil;
 + (id)loadSavedName:(NSString *)name {
     if (![name isKindOfClass:NSString.class] || !name.length) return nil;
     NSMutableDictionary *authData = parseJSONFromFile([NSString stringWithFormat:@"%s/accounts/%@.json", getenv("AME_HOME"), name]);
+    if (![authData isKindOfClass:NSDictionary.class]) return nil;
     if (authData[@"NSErrorObject"] != nil) {
         NSError *error = ((NSError *)authData[@"NSErrorObject"]);
         if (error.code != NSFileReadNoSuchFileError) {
