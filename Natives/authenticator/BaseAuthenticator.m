@@ -20,6 +20,7 @@ static BaseAuthenticator *current = nil;
 }
 
 + (id)loadSavedName:(NSString *)name {
+    if (![name isKindOfClass:NSString.class] || !name.length) return nil;
     NSMutableDictionary *authData = parseJSONFromFile([NSString stringWithFormat:@"%s/accounts/%@.json", getenv("AME_HOME"), name]);
     if (authData[@"NSErrorObject"] != nil) {
         NSError *error = ((NSError *)authData[@"NSErrorObject"]);
@@ -29,6 +30,7 @@ static BaseAuthenticator *current = nil;
         return nil;
     }
 
+    if (![authData[@"username"] isKindOfClass:NSString.class] || ![authData[@"username"] length]) return nil;
     if ([authData[@"expiresAt"] longValue] == 0) {
         return [[LocalAuthenticator alloc] initWithData:authData];
     } else { 
