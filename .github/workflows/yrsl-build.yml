@@ -33,6 +33,9 @@ jobs:
           set -euo pipefail
           brew install make ldid
           command -v cmake >/dev/null || brew install cmake
+          # Upstream uses UIKit APIs introduced in the iOS 26 SDK.
+          xcode_app="$(python3 -c 'import glob,re; apps=glob.glob("/Applications/Xcode_*.app"); supported=[p for p in apps if int(re.search(r"Xcode_(\d+)", p).group(1)) >= 26]; print(max(supported, key=lambda p: tuple(map(int,re.findall(r"\d+",p)))))')"
+          sudo xcode-select --switch "$xcode_app/Contents/Developer"
           xcodebuild -version
           xcrun --sdk iphoneos --show-sdk-path
           cmake --version
