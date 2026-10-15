@@ -35,7 +35,9 @@
         BOOL isDir = NO;
         [fm fileExistsAtPath:path isDirectory:(&isDir)];
         if(!isDir && [file hasSuffix:@".json"]) {
-            [self.accountList addObject:parseJSONFromFile(path)];
+            NSDictionary *account = parseJSONFromFile(path);
+            if (![account[@"username"] isKindOfClass:NSString.class] || ![account[@"username"] length] || account[@"NSErrorObject"]) continue;
+            [self.accountList addObject:account];
         }
     }
 
@@ -56,6 +58,7 @@
     }
 
     if (indexPath.row == self.accountList.count) {
+        cell.detailTextLabel.text = nil;
         cell.imageView.image = [UIImage imageNamed:@"IconAdd"];
         cell.textLabel.text = localize(@"login.option.add", nil);
         return cell;
@@ -99,7 +102,12 @@
             [self callbackMicrosoftAuth:status success:success forCell:cell];
         });
     };
-    [[BaseAuthenticator loadSavedName:self.accountList[indexPath.row][@"username"]] refreshTokenWithCallback:callback];
+    BaseAuthenticator *account = [BaseAuthenticator loadSavedName:self.accountList[indexPath.row][@"username"]];
+    if (!account) {
+        [self callbackMicrosoftAuth:localize(@"yrsl.auth.failed", nil) success:NO forCell:cell];
+        return;
+    }
+    [account refreshTokenWithCallback:callback];
 }
 
 - (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -135,7 +143,7 @@
     NSMutableDictionary *result = [NSMutableDictionary new];
     NSArray<NSURLQueryItem *> *queryItems = [NSURLComponents componentsWithString:url].queryItems;
     for (NSURLQueryItem *item in queryItems) {
-        result[item.name] = item.value;
+        if (item.name && item.value) result[item.name] = item.value;
     }
     return result;
 }
@@ -146,6 +154,9 @@
         [self actionLoginMicrosoft:sender];
     }];
     [picker addAction:actionMicrosoft];
+    [picker addAction:[UIAlertAction actionWithTitle:localize(@"yrsl.demo.play", nil) style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+        [self actionLoginMicrosoft:sender];
+    }]];
     UIAlertAction *actionLocal = [UIAlertAction actionWithTitle:localize(@"login.option.local", nil) style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
         [self actionLoginLocal:sender];
     }];
@@ -184,7 +195,7 @@
             [self presentViewController:controller animated:YES completion:nil];
         } else {
             id callback = ^(id status, BOOL success) {
-                self.whenItemSelected();
+                if (self.whenItemSelected) self.whenItemSelected();
                 [self dismissViewControllerAnimated:YES completion:nil];
             };
             [[[LocalAuthenticator alloc] initWithInput:usernameField.text] loginWithCallback:callback];
@@ -258,23 +269,23 @@
 }
 
 - (void)callbackMicrosoftAuth:(id)status success:(BOOL)success forCell:(UITableViewCell *)cell {
-    if (status != nil) {
-        if (success) {
-            cell.detailTextLabel.text = status;
-        } else {
-            self.modalInPresentation = NO;
-            self.tableView.userInteractionEnabled = YES;
-            [self removeActivityIndicatorFrom:cell];
-            cell.detailTextLabel.text = [status localizedDescription];
-            NSData *errorData = ((NSError *)status).userInfo[AFNetworkingOperationFailingURLResponseDataErrorKey];
-            NSString *errorStr = [[NSString alloc] initWithData:errorData encoding:NSUTF8StringEncoding];
-            NSLog(@"[MSA] Error: %@", errorStr);
-            showDialog(localize(@"Error", nil), errorStr);
-        }
-    } else if (success) {
-        self.whenItemSelected();
+    if (!success) {
+        self.modalInPresentation = NO;
+        self.tableView.userInteractionEnabled = YES;
         [self removeActivityIndicatorFrom:cell];
-        [self dismissViewControllerAnimated:YES completion:nil];
+        NSString *message = [status isKindOfClass:NSError.class] ? [status localizedDescription] : [status description];
+        if (!message.length) message = localize(@"yrsl.auth.failed", nil);
+        cell.detailTextLabel.text = message;
+        showDialog(localize(@"Error", nil), message);
+    } else if (status) {
+        cell.detailTextLabel.text = [status description];
+    } else {
+        self.modalInPresentation = NO;
+        self.tableView.userInteractionEnabled = YES;
+        [self removeActivityIndicatorFrom:cell];
+        [self dismissViewControllerAnimated:YES completion:^{
+            if (self.whenItemSelected) self.whenItemSelected();
+        }];
     }
 }
 
