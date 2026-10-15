@@ -136,13 +136,11 @@ static void *ProgressObserverContext = &ProgressObserverContext;
         // Perform token refreshment on startup
         [self setInteractionEnabled:NO forDownloading:NO];
         id callback = ^(id status, BOOL success) {
-            status = [status description];
-            self.progressText.text = status;
-            if (status == nil) {
-                [self setInteractionEnabled:YES forDownloading:NO];
-            } else if (!success) {
-                showDialog(localize(@"Error", nil), status);
-            }
+            dispatch_async(dispatch_get_main_queue(), ^{
+                self.progressText.text = [status description];
+                if (status == nil || !success) [self setInteractionEnabled:YES forDownloading:NO];
+                if (!success) showDialog(localize(@"Error", nil), [status description] ?: localize(@"yrsl.auth.failed", nil));
+            });
         };
         [BaseAuthenticator.current refreshTokenWithCallback:callback];
     }
@@ -276,6 +274,35 @@ static void *ProgressObserverContext = &ProgressObserverContext;
         self.buttonInstallItem.enabled = enabled;
     }
     UIApplication.sharedApplication.idleTimerDisabled = !enabled;
+}
+
+- (void)playDemo {
+    if (self.task) return;
+    if (![BaseAuthenticator.current isKindOfClass:MicrosoftAuthenticator.class] ||
+        ![BaseAuthenticator.current.authData[@"username"] hasPrefix:@"Demo."]) {
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:localize(@"yrsl.demo.play", nil)
+            message:localize(@"yrsl.demo.signin", nil) preferredStyle:UIAlertControllerStyleAlert];
+        [alert addAction:[UIAlertAction actionWithTitle:localize(@"login.option.select", nil)
+            style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+                LauncherMenuViewController *menu = (id)[(UINavigationController *)self.splitViewController.viewControllers[0] viewControllers][0];
+                [menu selectAccount:menu.accountButton];
+            }]];
+        [alert addAction:[UIAlertAction actionWithTitle:localize(@"Cancel", nil) style:UIAlertActionStyleCancel handler:nil]];
+        [self presentViewController:alert animated:YES completion:nil];
+        return;
+    }
+    // A dedicated vanilla profile: keep the official client's demo timer and restrictions.
+    if (![remoteVersionList filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"id == %@", @"1.21.4"]].count) {
+        showDialog(localize(@"Error", nil), localize(@"yrsl.demo.manifest", nil));
+        [self fetchRemoteVersionList];
+        return;
+    }
+    PLProfiles.current.profiles[@"YRSL Demo 1.21.4"] = @{
+        @"name": @"YRSL Demo 1.21.4", @"lastVersionId": @"1.21.4", @"javaVersion": @"0"
+    }.mutableCopy;
+    [PLProfiles.current setSelectedProfileName:@"YRSL Demo 1.21.4"];
+    [self reloadProfileList];
+    [self launchMinecraft:self.buttonInstall];
 }
 
 - (void)launchMinecraft:(UIButton *)sender {
@@ -456,21 +483,20 @@ static void *ProgressObserverContext = &ProgressObserverContext;
     UIAlertController* alert = [UIAlertController alertControllerWithTitle:localize(@"launcher.wait_jit.title", nil)
         message:hasTrollStoreJIT ? localize(@"launcher.wait_jit_trollstore.message", nil) : localize(@"launcher.wait_jit.message", nil)
         preferredStyle:UIAlertControllerStyleAlert];
-/* TODO:
-    UIAlertAction *cancel = [UIAlertAction actionWithTitle:localize(@"Cancel", nil) style:UIAlertActionStyleCancel handler:^{
-        
-    }];
-    [alert addAction:cancel];
-*/
+    NSProgress *jitWait = [NSProgress progressWithTotalUnitCount:1];
+    [alert addAction:[UIAlertAction actionWithTitle:localize(@"Cancel", nil) style:UIAlertActionStyleCancel handler:^(UIAlertAction *action) {
+        [jitWait cancel];
+        self.progressText.text = nil;
+    }]];
     [self presentViewController:alert animated:YES completion:nil];
 
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        while (!isJITEnabled(false)) {
+        while (!jitWait.cancelled && !isJITEnabled(false)) {
             // Perform check for every 200ms
             usleep(1000*200);
         }
         dispatch_async(dispatch_get_main_queue(), ^{
-            [alert dismissViewControllerAnimated:YES completion:handler];
+            if (!jitWait.cancelled) [alert dismissViewControllerAnimated:YES completion:handler];
         });
     });
 }
