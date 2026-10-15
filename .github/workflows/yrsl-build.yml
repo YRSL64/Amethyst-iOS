@@ -43,6 +43,8 @@ jobs:
         with:
           distribution: zulu
           java-version: '8'
+      - name: Check official Minecraft demo inputs
+        run: python3 scripts/check_demo_metadata.py
       - name: Download iOS runtimes and preserve their license notices
         run: |
           set -euo pipefail
