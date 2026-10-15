@@ -1,7 +1,17 @@
 # Этап 1: официальный Demo Mode
 
 Это экспериментальная ветка от yrsl-launcher. Предыдущая рабочая сборка не изменена.
+Сборка успешно прошла: https://github.com/YRSL64/Amethyst-iOS/actions/runs/38771589499
+IPA: https://github.com/YRSL64/Amethyst-iOS/actions/runs/38771589499/artifacts/11991687499
+Проверенный commit: `73eb813c78b69374f190b2ae5c8982fcb7d1a81e`.
+Подтверждены компиляция на Xcode 26.3, plutil-проверка переводов, официальные
+метаданные/клиент/индекс assets, упаковка IPA и наличие iOS runtimes, включая Java 21.
+Размер ZIP artifact: 189347512 байт. SHA256 ZIP:
+`0401dcf7f7a19484cc8a015d1fbc5e3f1e23d38d036961776b06f50c44b2ef1c`.
+Artifact хранится до 29 октября 2026 года.
+
 Подтверждение успешной компиляции не означает запуск Minecraft на iPhone.
+Критерий открытия Demo World на iOS 27 пока не подтверждён.
 
 ## Условия
 
@@ -55,6 +65,26 @@ Java-профиля, сохраняет demo-аккаунт и передаёт 
 Если инструмент требует Assign Script, используйте UniversalJIT26.js из Documents
 Amethyst. Не публикуйте pairing-файл. Если iOS 27 не поддерживается выбранным
 инструментом, этот этап остаётся заблокированным до появления совместимого метода.
+
+### Если StikDebug ещё не установлен
+
+1. Установите StikDebug через AltStore из официальных releases:
+   https://github.com/StikDebug/StikDebug/releases
+   README проекта сообщает, что в App Store его больше нет.
+2. Установите loopback VPN, указанный разработчиками StikDebug (сейчас LocalDevVPN),
+   и включите его. Проверьте текущий список требований в README StikDebug.
+3. На Windows установите iloader из https://github.com/nab138/iloader/releases.
+   Разблокируйте iPhone, подключите его по USB и подтвердите доверие компьютеру.
+4. В iloader откройте Manage Pairing File. Напротив StikDebug нажмите Place и
+   дождитесь сообщения об успешном размещении pairing-файла.
+5. Откройте StikDebug на телефоне, нажмите Enable JIT и выберите Amethyst.
+   При требовании Assign Script назначьте UniversalJIT26.js из Documents Amethyst.
+6. Вернитесь в Amethyst и повторите запуск демоверсии. Если JIT не определяется,
+   отмените ожидание и сохраните точный текст ошибки StikDebug для диагностики.
+
+Источник этих шагов: https://github.com/StikDebug/StikDebug-Guide/blob/main/pairing_file.md
+Проверять надо именно фактическое включение JIT на вашем iPhone, а не только наличие
+установленного StikDebug. Обновление/сброс iOS может потребовать нового pairing-файла.
 
 ## Исправления и границы проверки
 
