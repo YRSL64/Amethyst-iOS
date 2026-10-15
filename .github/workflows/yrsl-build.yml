@@ -3,7 +3,7 @@ name: YRSL baseline IPA
 on:
   workflow_dispatch:
   push:
-    branches: [main, yrsl, yrsl-launcher]
+    branches: [main, yrsl, yrsl-launcher, yrsl-demo-mode]
   pull_request:
 
 permissions:
@@ -43,6 +43,10 @@ jobs:
         with:
           distribution: zulu
           java-version: '8'
+      - name: Validate demo localizations
+        run: plutil -lint Natives/resources/en.lproj/Localizable.strings Natives/resources/ru.lproj/Localizable.strings
+      - name: Check official Minecraft demo inputs
+        run: python3 scripts/check_demo_metadata.py
       - name: Download iOS runtimes and preserve their license notices
         run: |
           set -euo pipefail

@@ -178,6 +178,10 @@ typedef void(^XSTSCallback)(NSString *xsts, NSString *uhs);
     manager.requestSerializer = AFJSONRequestSerializer.serializer;
     [manager GET:@"https://api.minecraftservices.com/minecraft/profile" parameters:nil headers:headers progress:nil success:^(NSURLSessionDataTask *task, NSDictionary *response) {
         NSString *uuid = response[@"id"];
+        if (![uuid isKindOfClass:NSString.class] || uuid.length != 32) {
+            callback(localize(@"yrsl.auth.failed", nil), NO);
+            return;
+        }
         self.authData[@"profileId"] = [NSString stringWithFormat:@"%@-%@-%@-%@-%@",
             [uuid substringWithRange:NSMakeRange(0, 8)],
             [uuid substringWithRange:NSMakeRange(8, 4)],
@@ -191,8 +195,8 @@ typedef void(^XSTSCallback)(NSString *xsts, NSString *uhs);
         callback(nil, [self saveChanges]);
     } failure:^(NSURLSessionDataTask *task, NSError *error) {
         NSData *errorData = error.userInfo[AFNetworkingOperationFailingURLResponseDataErrorKey];
-        NSDictionary *errorDict = [NSJSONSerialization JSONObjectWithData: errorData options:kNilOptions error:nil];
-        if ([errorDict[@"error"] isEqualToString:@"NOT_FOUND"]) {
+        NSDictionary *errorDict = errorData ? [NSJSONSerialization JSONObjectWithData:errorData options:kNilOptions error:nil] : nil;
+        if (((NSHTTPURLResponse *)task.response).statusCode == 404 && [errorDict[@"error"] isEqualToString:@"NOT_FOUND"]) {
             // If there is no profile, use the Xbox gamertag as username with Demo mode
             self.authData[@"profileId"] = @"00000000-0000-0000-0000-000000000000";
             self.authData[@"username"] = [NSString stringWithFormat:@"Demo.%@", self.authData[@"xboxGamertag"]];
@@ -217,8 +221,7 @@ typedef void(^XSTSCallback)(NSString *xsts, NSString *uhs);
 - (void)refreshTokenWithCallback:(Callback)callback {
     // Move tokens to keychain if we haven't
     if (!self.tokenData) {
-        showDialog(localize(@"Error", nil), @"Failed to load account tokens from keychain");
-        callback(nil, YES);
+        callback(localize(@"yrsl.auth.keychain", nil), NO);
         return;
     }
 
@@ -242,6 +245,7 @@ typedef void(^XSTSCallback)(NSString *xsts, NSString *uhs);
 #pragma mark Keychain
 
 + (NSDictionary *)keychainQueryForKey:(NSString *)profile extraInfo:(NSDictionary *)extra {
+    if (![profile isKindOfClass:NSString.class] || !profile.length) return nil;
     NSMutableDictionary *dict = @{
         (id)kSecClass: (id)kSecClassGenericPassword,
         (id)kSecAttrService: @"AccountToken",
@@ -258,11 +262,12 @@ typedef void(^XSTSCallback)(NSString *xsts, NSString *uhs);
         (id)kSecMatchLimit: (id)kSecMatchLimitOne,
         (id)kSecReturnData: (id)kCFBooleanTrue
     }];
+    if (!dict) return nil;
     CFTypeRef resultData = nil;
     OSStatus status = SecItemCopyMatching((__bridge CFDictionaryRef)dict, &resultData);
     if (status == errSecSuccess) {
         NSError *error = nil;
-        NSDictionary *result = [NSKeyedUnarchiver unarchivedObjectOfClasses:@[NSDictionary.class, NSString.class] fromData:(__bridge NSData *)resultData error:nil];
+        NSDictionary *result = [NSKeyedUnarchiver unarchivedObjectOfClasses:[NSSet setWithObjects:NSDictionary.class, NSString.class, nil] fromData:CFBridgingRelease(resultData) error:&error];
         if (error) {
             NSDebugLog(@"[MicrosoftAuthenticator] Failed to unarchive token data: %@", error);
         }
@@ -274,7 +279,7 @@ typedef void(^XSTSCallback)(NSString *xsts, NSString *uhs);
 
 + (void)clearTokenDataOfProfile:(NSString *)profile {
     NSDictionary *dict = [MicrosoftAuthenticator keychainQueryForKey:profile extraInfo:nil];
-    SecItemDelete((__bridge CFDictionaryRef)dict);
+    if (dict) SecItemDelete((__bridge CFDictionaryRef)dict);
 }
 
 - (BOOL)setAccessToken:(NSString *)accessToken refreshToken:(NSString *)refreshToken {
@@ -290,7 +295,8 @@ typedef void(^XSTSCallback)(NSString *xsts, NSString *uhs);
         (id)kSecAttrAccessible: (id)kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
         (id)kSecValueData: data
     }];
-    SecItemDelete((__bridge CFDictionaryRef)dict);
+    if (dict) SecItemDelete((__bridge CFDictionaryRef)dict);
+    if (!dict) return NO;
     OSStatus status = SecItemAdd((__bridge CFDictionaryRef)dict, NULL);
     return status == errSecSuccess;
 }

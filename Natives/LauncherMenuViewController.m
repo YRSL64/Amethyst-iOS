@@ -78,6 +78,11 @@
         [contentNavigationController performSelector:@selector(enterModInstaller)];
     }]];
     
+    [self.options addObject:[LauncherMenuCustomItem
+        title:localize(@"yrsl.demo.play", nil) imageName:@"play.circle" action:^{
+            [contentNavigationController playDemo];
+        }]];
+
     // TODO: Finish log-uploading service integration
     [self.options addObject:
      (id)[LauncherMenuCustomItem
@@ -255,7 +260,7 @@
     vc.whenItemSelected = ^void() {
         setPrefObject(@"internal.selected_account", BaseAuthenticator.current.authData[@"username"]);
         [self updateAccountInfo];
-        if (sender != self.accountButton) {
+        if (sender != self.accountButton && [sender isKindOfClass:UIButton.class]) {
             // Called from the play button, so call back to continue
             [sender sendActionsForControlEvents:UIControlEventPrimaryActionTriggered];
         }
@@ -279,7 +284,7 @@
         if((size.width / 3) > 200) {
             [self.accountButton setAttributedTitle:[[NSAttributedString alloc] initWithString:localize(@"login.option.select", nil)] forState:UIControlStateNormal];
         } else {
-            [self.accountButton setAttributedTitle:(NSAttributedString *)@"" forState:UIControlStateNormal];
+            [self.accountButton setAttributedTitle:[[NSAttributedString alloc] initWithString:@""] forState:UIControlStateNormal];
         }
         [self.accountButton setImage:[UIImage imageNamed:@"DefaultAccount"] forState:UIControlStateNormal];
         [self.accountButton sizeToFit];
@@ -316,7 +321,7 @@
     if((size.width / 3) > 200) {
         [self.accountButton setAttributedTitle:title forState:UIControlStateNormal];
     } else {
-        [self.accountButton setAttributedTitle:(NSAttributedString *)@"" forState:UIControlStateNormal];
+        [self.accountButton setAttributedTitle:[[NSAttributedString alloc] initWithString:@""] forState:UIControlStateNormal];
     }
     
     // TODO: Add caching mechanism for profile pictures
