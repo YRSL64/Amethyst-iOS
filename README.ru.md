@@ -1,9 +1,16 @@
 # YRSL Launcher — подготовка первой сборки
 
-Статус: подготовлен CI для сборки оригинального Amethyst. Сборка на macOS ещё
-не запускалась, IPA не получен. Это исходная база проекта, а не завершённый YRSL Launcher.
-Название приложения и интерфейс пока оригинальные: по заданию сначала нужна успешная
-сборка оригинала, затем брендинг и последовательные изменения с проверкой компиляции.
+Статус: первая macOS-сборка оригинального Amethyst успешно завершена.
+IPA создан, его содержимое проверено и загружено в GitHub Actions Artifacts.
+
+- Сборка: https://github.com/YRSL64/Amethyst-iOS/actions/runs/38724578743
+- IPA: https://github.com/YRSL64/Amethyst-iOS/actions/runs/38724578743/artifacts/11968070731
+- Проверенный commit: `cebebe0fa3f00dda7323aaf4999d57553dcf5082`.
+- Среда: macOS 15 ARM64, Xcode 26.3 / iPhoneOS SDK 26.2, Zulu JDK 8.
+
+Название приложения и интерфейс пока оригинальные. Проверка установки, JIT на
+вашем iPhone 17 Pro Max / iOS 27 и запуска Minecraft 1.21.4 ещё не выполнена.
+GitHub хранит этот artifact до 29 октября 2026 года; скачайте его заранее.
 
 Основа: https://github.com/AngelAuraMC/Amethyst-iOS
 Исследованный commit: `f98c4133c72d39e06ceac42b57cc4477c52105fc`.
