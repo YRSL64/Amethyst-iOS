@@ -67,7 +67,7 @@
 "launcher.menu.install_jar" = "Установить .jar";
 
 "launcher.wait_jit.title" = "Ожидание JIT";
-"launcher.wait_jit.message" = "Amethyst полагается на работу JIT-компилятора Java для работы с максимальной производительностью.";
+"launcher.wait_jit.message" = "JIT ещё не включён. Откройте StikDebug/StikJIT и включите JIT для этого приложения. Может требоваться UniversalJIT26.js. AltStore сам по себе JIT не включает. Совместимость с iOS 27 не подтверждена. Можно отменить ожидание.";
 
 "login.error.username.outOfRange" = "Имя пользователя не должно быть короче 3 и длиннее 16 символов";
 
@@ -245,3 +245,11 @@
 
 "controller_configurator.section.config_files" = "Текущий файл настроек";
 "controller_configurator.section.controller_style" = "Тип контроллера";
+
+// YRSL demo and account recovery
+"yrsl.demo.play" = "Играть в демоверсию";
+"yrsl.demo.signin" = "Войдите в Microsoft-аккаунт без Java Edition: «Добавить аккаунт» → Microsoft. Затем снова нажмите «Играть в демоверсию». Локальный профиль не позволяет скачивать Minecraft. Ограничения официальной демоверсии сохраняются.";
+"yrsl.demo.manifest" = "Данные Minecraft 1.21.4 ещё не загружены. Проверьте интернет и повторите попытку.";
+"yrsl.demo.local_blocked" = "Локальный аккаунт не позволяет скачивать Minecraft. Для официальной демоверсии войдите в Microsoft-аккаунт без Java Edition и нажмите «Играть в демоверсию».";
+"yrsl.auth.failed" = "Не удалось войти. Повторите вход через Microsoft.";
+"yrsl.auth.keychain" = "Токены аккаунта отсутствуют или не читаются. Повторите вход через Microsoft; локальный аккаунт для демоверсии не подходит.";
