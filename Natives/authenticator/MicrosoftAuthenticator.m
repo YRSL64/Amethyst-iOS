@@ -178,6 +178,10 @@ typedef void(^XSTSCallback)(NSString *xsts, NSString *uhs);
     manager.requestSerializer = AFJSONRequestSerializer.serializer;
     [manager GET:@"https://api.minecraftservices.com/minecraft/profile" parameters:nil headers:headers progress:nil success:^(NSURLSessionDataTask *task, NSDictionary *response) {
         NSString *uuid = response[@"id"];
+        if (![uuid isKindOfClass:NSString.class] || uuid.length != 32) {
+            callback(localize(@"yrsl.auth.failed", nil), NO);
+            return;
+        }
         self.authData[@"profileId"] = [NSString stringWithFormat:@"%@-%@-%@-%@-%@",
             [uuid substringWithRange:NSMakeRange(0, 8)],
             [uuid substringWithRange:NSMakeRange(8, 4)],
