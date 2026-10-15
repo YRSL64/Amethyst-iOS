@@ -3,7 +3,7 @@ name: YRSL baseline IPA
 on:
   workflow_dispatch:
   push:
-    branches: [main, yrsl, yrsl-launcher]
+    branches: [main, yrsl, yrsl-launcher, yrsl-demo-mode]
   pull_request:
 
 permissions:
