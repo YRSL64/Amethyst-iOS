@@ -1,0 +1,105 @@
+name: YRSL baseline IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, yrsl, yrsl-launcher]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: yrsl-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  baseline:
+    runs-on: macos-15
+    timeout-minutes: 90
+    env:
+      CMAKE_POLICY_VERSION_MINIMUM: '3.5'
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Install build dependencies
+        run: |
+          set -euo pipefail
+          brew install make ldid
+          command -v cmake >/dev/null || brew install cmake
+          # Upstream uses UIKit APIs introduced in the iOS 26 SDK.
+          xcode_app="$(python3 -c 'import glob,re; apps=glob.glob("/Applications/Xcode_*.app"); supported=[p for p in apps if int(re.search(r"Xcode_(\d+)", p).group(1)) >= 26]; print(max(supported, key=lambda p: tuple(map(int,re.findall(r"\d+",p)))))')"
+          sudo xcode-select --switch "$xcode_app/Contents/Developer"
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-path
+          cmake --version
+      - uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: '8'
+      - name: Download iOS runtimes and preserve their license notices
+        run: |
+          set -euo pipefail
+          mkdir -p depends ci-logs Natives/resources/runtime-licenses
+          for version in 8 17 21 25; do
+            archive="depends/jre${version}-ios-aarch64.zip"
+            curl --fail --location --retry 3 --output "$archive" \
+              "https://assets.angelauramc.dev/openjdk/ios-arm64/jre${version}-ios-aarch64.zip"
+            shasum -a 256 "$archive" >> ci-logs/runtime-sha256.txt
+            unzip -q "$archive" -d depends
+            mkdir -p "depends/java-${version}-openjdk"
+            tar -xf depends/jre${version}-*.tar.xz -C "depends/java-${version}-openjdk"
+            test -s "depends/java-${version}-openjdk/release"
+            notices="Natives/resources/runtime-licenses/java-${version}"
+            mkdir -p "$notices"
+            for entry in LICENSE legal ASSEMBLY_EXCEPTION THIRD_PARTY_README; do
+              if [ -e "depends/java-${version}-openjdk/$entry" ]; then
+                cp -R "depends/java-${version}-openjdk/$entry" "$notices/"
+              fi
+            done
+            if [ -z "$(ls -A "$notices")" ]; then
+              echo "::error::Runtime Java $version has no license notices; inspect the upstream runtime distribution."
+              exit 1
+            fi
+          done
+      - name: Build original engine and package sideload IPA
+        run: |
+          set -euo pipefail
+          mkdir -p ci-logs
+          git rev-parse HEAD > ci-logs/commit.txt
+          git submodule status --recursive > ci-logs/submodules.txt
+          # No parallel top-level recipes: packaging consumes the completed payload.
+          if ! gmake -j1 package dsym PLATFORM=2 RUNNER=1 RELEASE=0 \
+            SLIMMED=0 JOBS=3 BOOTJDK="$JAVA_HOME/bin" VERBOSE=1 \
+            2>&1 | tee ci-logs/build.log; then
+            echo '::error::Amethyst baseline build failed. Download baseline-diagnostics and inspect build.log.'
+            exit 1
+          fi
+      - name: Verify IPA contents
+        run: python3 scripts/verify_ipa.py artifacts/*.ipa
+      - name: Upload verified baseline IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: amethyst-baseline-ipa
+          path: artifacts/*.ipa
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload diagnostics and symbols
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: baseline-diagnostics
+          path: |
+            ci-logs/
+            Natives/resources/runtime-licenses/
+            Natives/build/CMakeCache.txt
+            Natives/build/CMakeFiles/CMakeConfigureLog.yaml
+            artifacts/*.dSYM/
+          if-no-files-found: warn
+          retention-days: 14
