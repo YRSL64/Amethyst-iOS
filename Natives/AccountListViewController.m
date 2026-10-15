@@ -36,7 +36,7 @@
         [fm fileExistsAtPath:path isDirectory:(&isDir)];
         if(!isDir && [file hasSuffix:@".json"]) {
             NSDictionary *account = parseJSONFromFile(path);
-            if (![account[@"username"] isKindOfClass:NSString.class] || ![account[@"username"] length] || account[@"NSErrorObject"]) continue;
+            if (![account isKindOfClass:NSDictionary.class] || ![account[@"username"] isKindOfClass:NSString.class] || ![account[@"username"] length] || account[@"NSErrorObject"]) continue;
             [self.accountList addObject:account];
         }
     }
