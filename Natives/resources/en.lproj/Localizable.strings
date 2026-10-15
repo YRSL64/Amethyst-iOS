@@ -332,3 +332,11 @@
 "controller_configurator.section.footer.menu_mappings" = "Bindings when the mouse is not locked, such as on the title screen or in the pause menu.";
 "controller_configurator.section.controller_style" = "Controller type";
 "controller_configurator.section.footer.controller_style" = "Show different controller button names in this configurator.";
+
+// YRSL demo and account recovery
+"yrsl.demo.play" = "Play demo";
+"yrsl.demo.signin" = "Sign in with a Microsoft account without Java Edition. Choose Add account → Microsoft, then press Play demo again. A local profile cannot download Minecraft. The official demo restrictions remain enabled.";
+"yrsl.demo.manifest" = "Minecraft 1.21.4 metadata is not loaded. Check your Internet connection and try again.";
+"yrsl.demo.local_blocked" = "A local account cannot download Minecraft. For the official demo, sign in with a Microsoft account without Java Edition, then select Play demo.";
+"yrsl.auth.failed" = "Sign-in failed. Try signing in again through Microsoft.";
+"yrsl.auth.keychain" = "Account tokens are missing or unreadable. Sign in again through Microsoft; do not use a local account for the demo.";
