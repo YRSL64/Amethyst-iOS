@@ -319,7 +319,7 @@
     if (!accessible) {
         [self.progress cancel];
         if (show) {
-            [self finishDownloadWithErrorString:@"Minecraft can't be legally installed when logged in with a local account. Please switch to an online account to continue."];
+            [self finishDownloadWithErrorString:localize(@"yrsl.demo.local_blocked", nil)];
         }
     }
     return accessible;
